@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catch It Early</title>
+<style>
+  :root{
+    --desk:#1E3A5F; --paper:#FBFAF5; --ink:#22303C; --rule:#D8D3C4;
+    --red:#B23A2E; --green:#2E7D32; --mark:#FFE27A; --muted:#6B7480;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--desk);color-scheme:dark;color:var(--ink);font-family:Georgia,"Times New Roman",serif}
+  .wrap{max-width:980px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{color:#fff;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  header h1{font-size:clamp(26px,4vw,40px);font-weight:400;margin:0;line-height:1.05;letter-spacing:-.01em}
+  header p{margin:6px 0 0;font-size:15px;opacity:.85;max-width:52ch;line-height:1.45}
+  .hud{display:flex;gap:18px;font-family:Arial,Helvetica,sans-serif;font-size:14px}
+  .hud b{display:block;font-size:26px;font-weight:700;line-height:1}
+  .stage{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;align-items:start}
+  @media(max-width:760px){.stage{grid-template-columns:1fr}}
+  /* the paper */
+  .paper{background:var(--paper);border-radius:3px;box-shadow:0 18px 40px rgba(0,0,0,.35),0 2px 0 #e9e4d6 inset;padding:26px 28px 30px;position:relative;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;transform:rotate(-.3deg)}
+  .paper:before{content:"";position:absolute;top:0;left:0;right:0;height:14px;background:linear-gradient(#0000,#0000 60%,#0000);border-top:6px solid var(--desk);opacity:.9}
+  .ph{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px}
+  .ph .co{font-weight:700;font-size:20px;letter-spacing:.02em}
+  .ph .co span{color:var(--green)}
+  .ph .doc{text-align:right;font-size:12px;color:var(--muted)}
+  .ph .doc b{display:block;color:var(--ink);font-size:15px}
+  table{width:100%;border-collapse:collapse;margin:10px 0}
+  th,td{border:1px solid var(--rule);padding:6px 8px;text-align:left;vertical-align:top;font-size:13px}
+  th{background:#EFEBDD;font-weight:700}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin:6px 0 10px}
+  .f{display:flex;gap:8px;border-bottom:1px dotted var(--rule);padding:3px 0}
+  .f span:first-child{color:var(--muted);min-width:118px}
+  .sig{display:flex;gap:18px;margin-top:16px}
+  .sig div{flex:1;border-top:1px solid var(--ink);padding-top:4px;font-size:12px;color:var(--muted)}
+  .sig .hand{font-family:"Brush Script MT","Segoe Script",cursive;font-size:20px;color:#1c2a6b;margin-top:-26px;padding-left:10px}
+  /* clickable defects */
+  .d{cursor:pointer;border-radius:3px;padding:0 2px;transition:background .15s;position:relative}
+  .d:hover{background:var(--mark)}
+  .d.found{background:none;cursor:default}
+  .d.found:after{content:"";position:absolute;inset:-6px -8px;border:3px solid var(--red);border-radius:50%;transform:rotate(-8deg);pointer-events:none;animation:stamp .25s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes stamp{from{transform:scale(1.6) rotate(-8deg);opacity:0}to{transform:scale(1) rotate(-8deg);opacity:1}}
+  .decoy{cursor:pointer;padding:0 2px;border-radius:3px}.decoy:hover{background:var(--mark)}
+  .paper.done .approved{display:block}
+  .approved{display:none;position:absolute;right:34px;bottom:56px;border:4px solid var(--green);color:var(--green);font-weight:900;font-size:26px;padding:6px 16px;transform:rotate(-14deg);letter-spacing:.06em;opacity:.85;border-radius:6px;animation:stamp .35s cubic-bezier(.2,1.4,.4,1)}
+  .approved small{display:block;font-size:11px;font-weight:700;letter-spacing:.02em}
+  /* side panel */
+  .side{background:#fff;border-radius:6px;padding:20px 22px;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+  .side h2{font-weight:400;font-size:22px;margin:0 0 8px}
+  .side p{margin:0 0 10px;line-height:1.5;font-size:15px}
+  .list{list-style:none;padding:0;margin:12px 0 0}
+  .list li{padding:9px 0;border-top:1px solid #eee;font-family:Arial,Helvetica,sans-serif;font-size:14px;display:flex;gap:10px;align-items:flex-start;color:var(--muted)}
+  .list li.on{color:var(--ink)}
+  .list li .n{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid #ddd;text-align:center;font-size:12px;line-height:18px;font-weight:700}
+  .list li.on .n{background:var(--red);border-color:var(--red);color:#fff}
+  .list li .why{display:block;font-size:13px;margin-top:3px;color:var(--muted)}
+  .cost{margin-top:14px;padding:12px 14px;background:#FFF6D6;border-left:4px solid #E4B400;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5}
+  .cost b{display:block;font-size:13px;margin-bottom:2px}
+  .btn{display:inline-block;margin-top:14px;background:var(--desk);color:#fff;border:0;padding:11px 18px;border-radius:4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;cursor:pointer}
+  .btn.alt{background:#fff;color:var(--desk);border:2px solid var(--desk)}
+  .btn:focus-visible,.d:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+  .result{display:none;margin-top:14px;padding:16px;border:2px solid var(--green);border-radius:6px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5}
+  .result b{font-size:20px;display:block;margin-bottom:6px;font-family:Georgia,serif;font-weight:400}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#fff;color:var(--ink);padding:10px 16px;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-family:Arial,Helvetica,sans-serif;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{color:#c9d6e6;font-family:Arial,Helvetica,sans-serif;font-size:12px;margin-top:28px;text-align:center;line-height:1.6}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .m{cursor:pointer;border-radius:3px;padding:0 2px;position:relative;transition:background .15s}
+  .m:hover{background:var(--mark)}
+  .m.marked:after{content:"";position:absolute;inset:-6px -8px;border:3px solid var(--red);border-radius:50%;transform:rotate(-8deg);pointer-events:none}
+  .m:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+  .paper.sealed .m{cursor:default}.paper.sealed .m:hover{background:none}
+  .mk{list-style:none;padding:0;margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px}
+  .mk li{border-top:1px solid #eee;padding:7px 0;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .mk li.empty{color:var(--muted)}
+  .mk button{background:none;border:0;color:var(--red);cursor:pointer;font-size:13px;padding:2px 4px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .sealed-box{display:none;margin-top:14px;padding:16px;border:2px solid var(--desk);border-radius:6px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5}
+  .sealed-box b{font-family:Georgia,serif;font-weight:400;font-size:20px;display:block;margin-bottom:6px}
+  .key{margin-top:14px;font-family:Arial,Helvetica,sans-serif;font-size:14px}
+  .key .it{border-top:1px solid #eee;padding:8px 0}.key .it b{display:block}
+  .key .hit{color:var(--green)}.key .miss{color:var(--red)}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}.paper{padding:20px 14px 24px}.ph{flex-wrap:wrap;gap:8px}.sig{flex-direction:column;gap:22px}.f{flex-wrap:wrap}.f span:first-child{min-width:110px}.stage>*{min-width:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Catch it early.</h1>
+      <p>A delivery note has just landed on your desk. It looks fine. Some things on it would cost us money, time or a customer if they left the building. Circle the areas you suspect (up to six). When you finish, press Done, take a screenshot and send it to the Quality team.</p>
+    </div>
+    <div class="hud">
+      <div>Circled<b id="count">0 / 6</b></div>
+    </div>
+  </header>
+  <div id="doneBanner" class="sealed-box" style="display:none;background:#fff;border:3px solid var(--green);margin:0 0 16px"></div>
+
+  <div class="stage">
+    <div class="paper" id="paper">
+      <div class="ph">
+        <div class="co">PETROGISTI<span>X</span><div style="font-size:11px;font-weight:400;color:var(--muted)">Logistics &amp; Supply Services · Al Jubail</div></div>
+        <div class="doc">Document<b>Delivery Note DN-2026-<span class="m" data-m="rev" data-l="Document number DN-2026-1187 Rev A" tabindex="0" role="button">1187 Rev A</span></b>Form QF-07-<span class="m" data-m="form" data-l="Form QF-07-03" tabindex="0" role="button">03</span></div>
+      </div>
+
+      <div class="grid">
+        <div class="f"><span>Customer</span><span class="m" data-m="customer" data-l="Customer: Eastern Gas Services Co." tabindex="0" role="button">Eastern Gas Services Co.</span></div>
+        <div class="f"><span>Purchase order</span><span class="m" data-m="po" data-l="Purchase order PO-77812" tabindex="0" role="button">PO-77812</span></div>
+        <div class="f"><span>Delivery date</span><span class="m" data-m="date" data-l="Delivery date 11/03/2026" tabindex="0" role="button">11/03/2026</span></div>
+        <div class="f"><span>Vehicle</span><span class="m" data-m="vehicle" data-l="Vehicle TRK-214, driver S. Al-Harbi" tabindex="0" role="button">TRK-214 · Driver: S. Al-Harbi</span></div>
+        <div class="f"><span>Site</span><span class="m" data-m="site" data-l="Site: Plant 3, Gate B" tabindex="0" role="button">Plant 3, Gate B</span></div>
+        <div class="f"><span>Prepared by</span><span class="m" data-m="prep" data-l="Prepared by Warehouse, M. Rashid" tabindex="0" role="button">Warehouse — M. Rashid</span></div>
+      </div>
+
+      <div style="overflow-x:auto;max-width:100%"><table style="min-width:440px">
+        <thead><tr><th style="width:36px">#</th><th>Item</th><th>Ordered</th><th>Delivered</th><th>Unit</th><th>Certificate</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><span class="m" data-m="i1" data-l="Item 1: gate valve 6 inch class 300" tabindex="0" role="button">Gate valve 6" class 300, carbon steel</span></td><td>12</td><td><span class="m" data-m="q1" data-l="Item 1 delivered: 12" tabindex="0" role="button">12</span></td><td>ea</td><td><span class="m" data-m="c1" data-l="Item 1 certificate MTC-4471" tabindex="0" role="button">MTC-4471 ✓</span></td></tr>
+          <tr><td>2</td><td><span class="m" data-m="i2" data-l="Item 2: spiral-wound gasket" tabindex="0" role="button">Gasket spiral-wound 6" 300#</span></td><td>24</td><td><span class="m" data-m="qty" data-l="Item 2 delivered: 42" tabindex="0" role="button">42</span></td><td>ea</td><td><span class="m" data-m="c2" data-l="Item 2 certificate: n/a" tabindex="0" role="button">n/a</span></td></tr>
+          <tr><td>3</td><td><span class="m" data-m="i3" data-l="Item 3: hydraulic oil ISO VG 46" tabindex="0" role="button">Hydraulic oil ISO VG 46</span></td><td>800</td><td><span class="m" data-m="q3" data-l="Item 3 delivered: 800" tabindex="0" role="button">800</span></td><td><span class="m" data-m="unit" data-l="Item 3 unit: kg" tabindex="0" role="button">kg</span></td><td><span class="m" data-m="c3" data-l="Item 3 certificate COA-2290" tabindex="0" role="button">COA-2290 ✓</span></td></tr>
+          <tr><td>4</td><td><span class="m" data-m="i4" data-l="Item 4: pipe support clamp" tabindex="0" role="button">Pipe support clamp 6"</span></td><td>30</td><td><span class="m" data-m="q4" data-l="Item 4 delivered: 30" tabindex="0" role="button">30</span></td><td>ea</td><td><span class="m" data-m="c4" data-l="Item 4 certificate MTC-4473" tabindex="0" role="button">MTC-4473 ✓</span></td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="grid" style="margin-top:4px">
+        <div class="f"><span>Packing</span><span class="m" data-m="pack" data-l="Packing: 4 pallets, shrink-wrapped, labelled" tabindex="0" role="button">4 pallets, shrink-wrapped, labelled</span></div>
+        <div class="f"><span>Inspection</span><span class="m" data-m="insp" data-l="Inspection: visual and count at dispatch" tabindex="0" role="button">Visual + count at dispatch</span></div>
+        <div class="f"><span>Remarks</span><span class="m" data-m="rem" data-l="Remarks: deliver before 14:00" tabindex="0" role="button">Deliver before 14:00, contact site QC on arrival</span></div>
+        <div class="f"><span>Supplier (item 3)</span><span class="m" data-m="sup" data-l="Supplier of item 3: Gulf Lubricants Trading" tabindex="0" role="button">Gulf Lubricants Trading</span></div>
+      </div>
+
+      <div class="sig">
+        <div><div class="hand">M. Rashid</div><span class="m" data-m="s1" data-l="Prepared by signature" tabindex="0" role="button">Prepared by</span></div>
+        <div><div class="hand">&nbsp;</div><span class="m" data-m="sig" data-l="Checked by (QC) box" tabindex="0" role="button">Checked by (QC)</span></div>
+        <div><div class="hand">R. Al-Dosari</div><span class="m" data-m="s3" data-l="Received by (customer) signature" tabindex="0" role="button">Received by (customer)</span></div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <h2>Your inspection</h2>
+      <label for="who" style="display:block;font-family:Arial,sans-serif;font-size:14px;margin-bottom:4px">Your name</label>
+      <input id="who" type="text" maxlength="40" autocomplete="name" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:4px;font-size:16px;margin-bottom:10px">
+      <p>Tap an item on the note to circle it. Tap it again to remove the circle. Look at every number, date, unit, version and box.</p>
+      <ul class="mk" id="mk"></ul>
+      <button class="btn" id="seal" type="button" disabled>Done</button>
+      <button class="btn alt" id="reset" type="button">Clear circles</button>
+    </aside>
+  </div>
+
+  <footer>Petrogistix Quality Day · Sunday 15 November 2026 · World Quality Week theme: Quality: powering performance · #WQW26<br>Made for the whole company. No data is collected; nothing you do here is stored or sent.</footer>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const MAX=6;
+const SEND_TO="the Quality team"; /* change this to a name, email or WhatsApp group */
+const $=id=>document.getElementById(id);
+const paper=$("paper"),toast=$("toast"),mk=$("mk"),seal=$("seal");
+const els=[...document.querySelectorAll(".m")];
+let marks=[],done=false;
+function say(m){toast.textContent=m;toast.classList.add("show");clearTimeout(say._t);say._t=setTimeout(()=>toast.classList.remove("show"),2200)}
+function render(){
+  $("count").textContent=marks.length+" / "+MAX;
+  els.forEach(e=>e.classList.toggle("marked",marks.includes(e.dataset.m)));
+  mk.innerHTML="";
+  if(!marks.length)mk.innerHTML='<li class="empty">Nothing circled yet.</li>';
+  marks.forEach(id=>{const e=els.find(x=>x.dataset.m===id);const li=document.createElement("li");const s=document.createElement("span");s.textContent=e.dataset.l;li.appendChild(s);
+    if(!done){const b=document.createElement("button");b.type="button";b.textContent="Remove";b.onclick=()=>toggle(id);li.appendChild(b)}mk.appendChild(li)});
+  seal.disabled=done||marks.length===0;
+}
+function toggle(id){
+  if(done)return;
+  if(marks.includes(id))marks=marks.filter(x=>x!==id);
+  else if(marks.length>=MAX){say("You have circled "+MAX+". Remove one to change your mind.");return}
+  else marks.push(id);
+  render();
+}
+els.forEach(e=>{e.addEventListener("click",()=>toggle(e.dataset.m));e.addEventListener("keydown",k=>{if(k.key==="Enter"||k.key===" "){k.preventDefault();toggle(e.dataset.m)}})});
+seal.addEventListener("click",()=>{
+  if(!marks.length||done)return;
+  done=true;paper.classList.add("sealed");seal.hidden=true;$("reset").hidden=true;
+  const n=$("who").value.trim()||"(no name)";
+  const b=$("doneBanner");b.style.display="block";
+  b.innerHTML="<b>Done. Thank you, "+n.replace(/[<>&]/g,"")+".</b>Take a screenshot of this screen now and send it to "+SEND_TO+". Your answers will be reviewed on Quality Day.";
+  render();window.scrollTo(0,0);
+});
+$("reset").addEventListener("click",()=>{if(done)return;marks=[];render()});
+render();
+</script>
+
+</body>
+</html>
